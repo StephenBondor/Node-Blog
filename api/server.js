@@ -5,6 +5,30 @@ const userDb = require('../data/helpers/userDb.js');
 
 const server = express();
 
+//Custom Middlewhere
+function capitalize(req, res, next) {
+	const {name} = req.body;
+	if (name) {
+		req.body.name = name
+			.split(' ')
+			.map(i =>
+				i
+					.split('')
+					.map((e, i) => {
+						if (i === 0) {
+							return e.toUpperCase();
+						}
+						return e;
+					})
+					.join('')
+			)
+			.join(' ');
+		next();
+	} else {
+		res.status(500).json('The name needs to be capitalized');
+	}
+}
+
 //configure middleware
 server.use(express.json());
 server.use(helmet());
@@ -17,7 +41,8 @@ server.get('/', (req, res) => {
 
 //get all users
 server.get('/api/users', (req, res) => {
-	userDb.get()
+	userDb
+		.get()
 		.then(users => {
 			res.status(200).json(users);
 		})
@@ -30,7 +55,8 @@ server.get('/api/users', (req, res) => {
 server.get('/api/users/:userid', (req, res) => {
 	const id = req.params.userid;
 
-	userDb.get(id)
+	userDb
+		.get(id)
 		.then(user => {
 			if (user) {
 				res.status(200).json(user);
@@ -42,20 +68,20 @@ server.get('/api/users/:userid', (req, res) => {
 });
 
 //create a new user
-server.post('/api/users', (req, res) => {
+server.post('/api/users', capitalize, (req, res) => {
 	const userInfo = req.body;
 
-    if (!userInfo.name) {
+	if (!userInfo.name) {
 		res.status(400).json({
 			errorMessage: 'Please provide a name for the user.'
 		});
 	}
 
-    userInfo.name = userInfo.name.toUpperCase()
-
-	userDb.insert(userInfo)
+	userDb
+		.insert(userInfo)
 		.then(result => {
-			userDb.get(result.id)
+			userDb
+				.get(result.id)
 				.then(user => {
 					res.status(201).json(user);
 				})
@@ -73,7 +99,8 @@ server.post('/api/users', (req, res) => {
 //delete a user by ID
 server.delete('/api/users/:id', (req, res) => {
 	const {id} = req.params;
-	userDb.get(id)
+	userDb
+		.get(id)
 		.then(user => {
 			if (user) {
 				userDb.remove(id).then(count => {
@@ -89,7 +116,7 @@ server.delete('/api/users/:id', (req, res) => {
 });
 
 //Update a user
-server.put('/api/users/:id', (req, res) => {
+server.put('/api/users/:id', capitalize, (req, res) => {
 	const id = req.params.id;
 	const changes = req.body;
 
@@ -97,14 +124,14 @@ server.put('/api/users/:id', (req, res) => {
 		res.status(400).json({
 			errorMessage: 'Please provide a name for the user.'
 		});
-    }
-    
-    changes.name = changes.name.toUpperCase()
+	}
 
-	userDb.get(id)
+	userDb
+		.get(id)
 		.then(user => {
-			if (user.length != 0 && user.hasOwnProperty('name')) {
-				userDb.update(id, changes)
+			if (user) {
+				userDb
+					.update(id, changes)
 					.then(count => {
 						res.status(200).json(count);
 					})
