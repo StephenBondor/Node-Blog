@@ -61,7 +61,9 @@ server.get('/api/users/:userid', (req, res) => {
 			if (user) {
 				res.status(200).json(user);
 			} else {
-				res.status(404).json({message: 'User not found'});
+				res.status(404).json({
+					message: 'User not found, enter a valid ID'
+				});
 			}
 		})
 		.catch(err => res.status(500).json(err));
@@ -71,25 +73,37 @@ server.get('/api/users/:userid', (req, res) => {
 server.post('/api/users', capitalize, (req, res) => {
 	const userInfo = req.body;
 
+	//check to see if the object has a name
 	if (!userInfo.name) {
 		res.status(400).json({
 			errorMessage: 'Please provide a name for the user.'
 		});
 	}
 
+	//check to see that the rest of the object is formatted correctly
+	if (Object.keys(userInfo).length != 1) {
+		res.status(400).json({
+			errorMessage:
+				"Please provide a valid object for the user: { name : 'Bob Dole' }"
+		});
+	}
+
+	//check to see if that name is taken already
 	userDb
 		.get()
 		.then(users =>
 			users.forEach(item => {
 				if (item.name === userInfo.name) {
 					res.status(400).json({
-						errorMessage: 'Please provide a unique name for the user.'
+						errorMessage:
+							'Please provide a unique name for the user.'
 					});
 				}
 			})
 		)
 		.catch(err => res.status(500).json(err));
 
+	//actually add the new user
 	userDb
 		.insert(userInfo)
 		.then(result => {
@@ -101,11 +115,11 @@ server.post('/api/users', capitalize, (req, res) => {
 				.catch(err =>
 					res
 						.status(500)
-						.json({message: 'the Post Failed', error: err})
+						.json({message: 'Finding the added user failed', error: err})
 				);
 		})
 		.catch(err =>
-			res.status(500).json({message: 'the Post Failed', error: err})
+			res.status(500).json({message: 'Adding the user failed', error: err})
 		);
 });
 
@@ -121,7 +135,7 @@ server.delete('/api/users/:id', (req, res) => {
 				});
 			} else {
 				res.status(404).json({
-					message: 'The user with the specific ID does not exist'
+					message: 'The user with the specified ID does not exist'
 				});
 			}
 		})
@@ -133,12 +147,22 @@ server.put('/api/users/:id', capitalize, (req, res) => {
 	const id = req.params.id;
 	const changes = req.body;
 
+	//check to see if the object has a name
 	if (!changes.name) {
 		res.status(400).json({
 			errorMessage: 'Please provide a name for the user.'
 		});
 	}
 
+	//check to see that the rest of the object is formatted correctly
+	if (Object.keys(changes).length != 1) {
+		res.status(400).json({
+			errorMessage:
+				"Please provide a valid object for the user: { name : 'Bob Dole' }"
+		});
+	}
+
+	//update user
 	userDb
 		.get(id)
 		.then(user => {
