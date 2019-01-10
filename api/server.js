@@ -78,6 +78,19 @@ server.post('/api/users', capitalize, (req, res) => {
 	}
 
 	userDb
+		.get()
+		.then(users =>
+			users.forEach(item => {
+				if (item.name === userInfo.name) {
+					res.status(400).json({
+						errorMessage: 'Please provide a unique name for the user.'
+					});
+				}
+			})
+		)
+		.catch(err => res.status(500).json(err));
+
+	userDb
 		.insert(userInfo)
 		.then(result => {
 			userDb
@@ -108,7 +121,7 @@ server.delete('/api/users/:id', (req, res) => {
 				});
 			} else {
 				res.status(404).json({
-					message: 'the user with the specific ID does not exist'
+					message: 'The user with the specific ID does not exist'
 				});
 			}
 		})
